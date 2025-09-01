@@ -19,7 +19,7 @@ A Flask web application that provides an interactive tree visualization of a Tri
   - 🟡 Real-time highlighting while typing
   - 🟢 Search traversal animation
 
-## How to Run
+## How to Run Locally
 
 1. Create and activate a virtual environment:
    ```bash

@@ -596,6 +596,101 @@
             line-height: 1.3;
         }
 
+        /* Confirmation Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.show .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .modal-icon {
+            font-size: 24px;
+            color: #ea4335;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: #202124;
+        }
+
+        .modal-message {
+            font-size: 14px;
+            color: #5f6368;
+            line-height: 1.4;
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: 1px solid #dadce0;
+            background: #ffffff;
+            color: #3c4043;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+
+        .modal-btn:hover {
+            background: #f8f9fa;
+        }
+
+        .modal-btn.primary {
+            background: #ea4335;
+            color: white;
+            border-color: #ea4335;
+        }
+
+        .modal-btn.primary:hover {
+            background: #d33b2c;
+            border-color: #d33b2c;
+        }
+
         @media (max-width: 768px) {
             .logo {
                 font-size: 40px;
@@ -665,6 +760,23 @@
 
     <!-- Toast notification container -->
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon">⚠️</div>
+                <div class="modal-title">Confirm Delete</div>
+            </div>
+            <div class="modal-message" id="modalMessage">
+                Are you sure you want to delete this item?
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-btn" onclick="closeModal()">Cancel</button>
+                <button class="modal-btn primary" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Collapsible Guide Sidebar -->
     <div class="guide-section" id="guideSidebar">
@@ -748,6 +860,56 @@
     <script>
         let currentSearchTimeout;
         let currentTrie = null;
+        let pendingDeleteAction = null; // Store the delete action to execute after confirmation
+
+        function showConfirmModal(message, onConfirm) {
+            const modal = document.getElementById('confirmModal');
+            const messageElement = document.getElementById('modalMessage');
+            
+            messageElement.textContent = message;
+            pendingDeleteAction = onConfirm;
+            
+            modal.classList.add('show');
+            
+            // Focus the Delete button for keyboard navigation
+            setTimeout(() => {
+                modal.querySelector('.modal-btn.primary').focus();
+            }, 100);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('show');
+            pendingDeleteAction = null;
+        }
+
+        function confirmDelete() {
+            if (pendingDeleteAction) {
+                pendingDeleteAction();
+                pendingDeleteAction = null;
+            }
+            closeModal();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('confirmModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Handle keyboard events for modal
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('confirmModal');
+            if (modal.classList.contains('show')) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                } else if (e.key === 'Enter') {
+                    confirmDelete();
+                }
+            }
+        });
 
         function showToast(title, message, type = 'info', duration = 4000) {
             const container = document.getElementById('toastContainer');
@@ -1110,12 +1272,12 @@
         function deletePrefix(prefix, isRoot = false) {
             let confirmMessage;
             if (isRoot) {
-                confirmMessage = 'Are you sure you want to clear the entire trie?';
+                confirmMessage = 'Are you sure you want to clear the entire trie? This will remove all words and reset the visualization.';
             } else {
-                confirmMessage = `Are you sure you want to delete "${prefix}" and all its children?`;
+                confirmMessage = `Are you sure you want to delete "${prefix}" and all its children? This action cannot be undone.`;
             }
 
-            if (confirm(confirmMessage)) {
+            showConfirmModal(confirmMessage, () => {
                 fetch('/delete', {
                     method: 'POST',
                     headers: {
@@ -1139,7 +1301,7 @@
                     console.error('Error:', error);
                     showToast('Error', 'An error occurred while deleting', 'error');
                 });
-            }
+            });
         }
 
         function showMessage(message, type) {

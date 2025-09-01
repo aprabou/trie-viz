@@ -1,6 +1,12 @@
 # Trie Visualizer
 
-A Flask web application that provides an interactive tree visualization of a Trie (prefix tree) data structure with real-time search highlighting.
+A beautiful, interactive web application for visualizing Trie data structures with real-time search highlighting and Google-style design.
+
+## 🚀 Live Demo
+
+**Visit the live demo:** [https://aprabou.github.io/trie-viz/](https://aprabou.github.io/trie-viz/)
+
+*The app is fully functional and works entirely in your browser - no backend required!*
 
 ## Features
 
